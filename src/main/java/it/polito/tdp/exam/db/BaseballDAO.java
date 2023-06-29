@@ -9,9 +9,98 @@ import java.util.ArrayList;
 import java.util.List;
 
 import it.polito.tdp.exam.model.People;
+import it.polito.tdp.exam.model.PeopleSalary;
 import it.polito.tdp.exam.model.Team;
 
 public class BaseballDAO {
+
+	public List<PeopleSalary> getPlayersSalaryTeamYear(String name, int anno){
+		String sql = "SELECT people.*, salaries.salary, teams.name, teams.year " +
+				"FROM people, teams, salaries " +
+				"WHERE teams.year = ? " +
+				"AND teams.name = ? " +
+				"AND people.playerID=salaries.playerID " +
+				"AND salaries.teamID=teams.ID";
+
+		List<PeopleSalary> result = new ArrayList<PeopleSalary>();
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setInt(1, anno);
+			st.setString(2, name);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				People player = new People(rs.getString("playerID"), rs.getString("birthCountry"), rs.getString("birthCity"),
+						rs.getString("deathCountry"), rs.getString("deathCity"), rs.getString("nameFirst"),
+						rs.getString("nameLast"), rs.getInt("weight"), rs.getInt("height"), rs.getString("bats"),
+						rs.getString("throws"), getBirthDate(rs), getDebutDate(rs), getFinalGameDate(rs),
+						getDeathDate(rs));
+
+				result.add(new PeopleSalary(player, rs.getDouble("salary")));
+			}
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+
+	public List<Integer> getVertici(String name) {
+		String sql = "SELECT distinct year "
+				+ "FROM teams "
+				+ "WHERE name = ? "
+				+ "ORDER BY year ASC";
+		List<Integer> result = new ArrayList<Integer>();
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			st.setString(1, name);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				result.add(rs.getInt("year"));
+			}
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+
+	public List<String> getTeamsNames() {
+		String sql = "SELECT DISTINCT name "
+				+ "FROM teams "
+				+ "ORDER BY name ASC";
+		List<String> result = new ArrayList<String>();
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(sql);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				result.add(new String(rs.getString("name")));
+			}
+
+
+			conn.close();
+			return result;
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
 
 	public List<People> readAllPlayers() {
 		String sql = "SELECT * " + "FROM people";
